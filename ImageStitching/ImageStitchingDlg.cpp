@@ -12,6 +12,8 @@
 #define new DEBUG_NEW
 #endif
 
+vector<Mat> input_imgs;
+
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
 
@@ -172,6 +174,24 @@ HCURSOR CImageStitchingDlg::OnQueryDragIcon()
 
 void CImageStitchingDlg::OnBnClickedOk()
 {
+	Mat result;
+	Stitcher stitcher = Stitcher::createDefault();
+
+	imshow("img1", input_imgs[0]);
+	imshow("img2", input_imgs[1]);
+
+	Stitcher::Status status = stitcher.stitch(input_imgs, result);
+
+	if (status != Stitcher::OK)
+	{
+		printf("Can't stitch images, error code =  %d", status);
+	}
+	else {
+
+		imshow("result", result);
+	}
+
+	waitKey();
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CDialogEx::OnOK();
 }
@@ -235,25 +255,16 @@ void CImageStitchingDlg::OnBnClickedOpenbutton1()
 	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, (CString)szFilter, NULL);
 
 	if (IDOK == dlg.DoModal())
-
 	{
-
-		// 이미지 경로 획득
-
 		CString img_path = dlg.GetPathName();
 
-		// Image Path 넣기
 
 		Edit_File_Inputimage1.SetWindowTextA(dlg.GetFileTitle());
 
-		// IplImage로 읽어오기
 
-		IplImage* input_img = cvLoadImage((LPSTR)(LPCSTR)img_path);
-
-		// 화면 출력
-
-		cvShowImage("Input Image 1", input_img);
-
+		IplImage* img = cvLoadImage((LPSTR)(LPCSTR)img_path);
+		Mat matImg = cvarrToMat(img, false);
+		input_imgs.push_back(matImg);
 	}
 }
 
@@ -279,10 +290,8 @@ void CImageStitchingDlg::OnBnClickedOpenbutton2()
 
 		// IplImage로 읽어오기
 
-		IplImage* input_img = cvLoadImage((LPSTR)(LPCSTR)img_path);
-
-		// 화면 출력
-
-		cvShowImage("Input Image 2", input_img);
+		IplImage* img = cvLoadImage((LPSTR)(LPCSTR)img_path);
+		Mat matImg = Mat(cvarrToMat(img));
+		input_imgs.push_back(matImg);
 	}
 }

@@ -3,7 +3,12 @@
 //
 
 #pragma once
+#include <iostream>
+#include <fstream>
 #include <opencv2\opencv.hpp>
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/stitching.hpp"
 
 using namespace cv;
 using namespace std;
