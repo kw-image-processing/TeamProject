@@ -171,7 +171,21 @@ HCURSOR CImageStitchingDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
+void sort_matches_increasing(std::vector< cv::DMatch >& matches)
+{
+	for (int i = 0; i < matches.size(); i++)
+	{
+		for (int j = 0; j < matches.size() - 1; j++)
+		{
+			if (matches[j].distance > matches[j + 1].distance)
+			{
+				auto temp = matches[j];
+				matches[j] = matches[j + 1];
+				matches[j + 1] = temp;
+			}
+		}
+	}
+}
 
 void CImageStitchingDlg::OnBnClickedOk()
 {
@@ -201,21 +215,54 @@ void CImageStitchingDlg::OnBnClickedOk()
 	detector->detectAndCompute(gray_image2, noArray(), keypoints_right, descriptors_right);
 
 	// Flann 방식과 K-Nearest Neighbor 알고리즘을 이용해서 특징점 매칭
-	Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-	vector<vector<DMatch>> knn_matches;
-	matcher->knnMatch(descriptors_left, descriptors_right, knn_matches, 2);
 
-	// 좋은 매칭만 걸러내는 작업
-	const float ratio_thresh = 0.7f;
+	//vector<vector<DMatch>> knn_matches;
+	//Ptr<DescriptorMatcher> matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+	//matcher->knnMatch(descriptors_left, descriptors_right, knn_matches, 2);
+
+	// 특징점 매칭
+	cv::BFMatcher brue_force_matcher = cv::BFMatcher(4, true);
+	std::vector< cv::DMatch > matches;
+
+	brue_force_matcher.match(descriptors_left, descriptors_right, matches);
+
 	vector<DMatch> good_matches;
 
-	for (size_t i = 0; i < knn_matches.size(); i++)
+	good_matches = matches;
+	
+	// 좋은 매칭만 걸러내는 작업
+	//const float ratio_thresh = 0.7f;
+	//for (size_t i = 0; i < matches.size(); i++)
+	//{
+	//	if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
+	//	{
+	//		good_matches.push_back(matches[i]);
+	//	}
+	//}
+
+	
+	//정렬
+
+	sort_matches_increasing(good_matches);
+
+	//특징점 10개로 제한
+
+	if (good_matches.size() > 10)
 	{
-		if (knn_matches[i][0].distance < ratio_thresh * knn_matches[i][1].distance)
-		{
-			good_matches.push_back(knn_matches[i][0]);
-		}
+		good_matches.resize(10);
 	}
+
+	cv::Mat output_image;
+
+	// 특징점 매칭현황 그리기
+
+	cv::drawMatches(
+		input_imgs[0], keypoints_left,
+		input_imgs[1], keypoints_right,
+		good_matches,
+		output_image);
+
+	cv::imshow("Matches", output_image);
 
 	// 좋은 매칭들의 특징점들을 얻어오기
 	vector<Point2f> left;
